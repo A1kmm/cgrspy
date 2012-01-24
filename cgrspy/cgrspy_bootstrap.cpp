@@ -635,7 +635,11 @@ genericValueToPython(iface::CGRS::GenericValue* aGenVal)
   DECLARE_QUERY_INTERFACE_OBJREF(ev, aGenVal, CGRS::EnumValue);
   if (ev != NULL)
   {
-    Enum *ev = PyObject_New(Enum, &EnumType);
+    Enum *evo = PyObject_New(Enum, &EnumType);
+    std::string s(ev->asString());
+    evo->asString = PyString_FromString(s.c_str());
+    evo->asInteger = ev->asLong();
+    return reinterpret_cast<PyObject*>(evo);
   }
 
   // Otherwise, it is one of the built-in types...
@@ -660,6 +664,197 @@ genericValueToPython(iface::CGRS::GenericValue* aGenVal)
 }
 
 static iface::CGRS::GenericValue*
+pythonValueToGenericB(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "boolean")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(bv, aGenVal, CGRS::BooleanValue);
+    if (bv->asBoolean())
+    {
+      Py_RETURN_TRUE;
+    }
+    else
+    {
+      Py_RETURN_FALSE;
+    }
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericC(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "char")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(cv, aGenVal, CGRS::CharValue);
+    char v = cv->asChar();
+    return PyString_FromStringAndSize(&v, 1);
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericD(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "double")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(dv, aGenVal, CGRS::DoubleValue);
+    return PyFloat_FromDouble(dv->asDouble());
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericF(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "float")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(fv, aGenVal, CGRS::FloatValue);
+    return PyFloat_FromDouble(fv->asFloat());
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericL(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "long")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(lv, aGenVal, CGRS::LongValue);
+    return PyInt_FromLong(lv->asLong());
+  }
+  else if (aTypename == "long long")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(llv, aGenVal, CGRS::LongLongValue);
+    return PyLong_FromLongLong(llv->asLongLong());
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericO(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "octet")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(ov, aGenVal, CGRS::OctetValue);
+    return PyInt_FromLong(ov->asOctet());
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericS(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "string")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(sv, aGenVal, CGRS::StringValue);
+    std::string s(sv->asString());
+    return PyString_FromString(s.c_str());
+  }
+  else if (aTypename == "short")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(sv, aGenVal, CGRS::ShortValue);
+    return PyInt_FromLong(sv->asShort());
+  }
+
+  // Maybe it is a sequence...
+  DECLARE_QUERY_INTERFACE_OBJREF(sv, aGenVal, CGRS::SequenceValue);
+  if (sv != NULL)
+  {
+    long l = sv->valueCount();
+    PyObject* lst = PyList_New(l);
+    for (long i = 0; i < l; i++)
+    {
+      ObjRef<iface::CGRS::GenericValue> svi(sv->getValueByIndex(i));
+      PyList_SET_ITEM(lst, i, genericValueToPython(svi));
+    }
+    return lst;
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericU(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "unsigned short")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(usv, aGenVal, CGRS::UShortValue);
+    return PyInt_FromLong(usv->asUShort());
+  }
+  else if (aTypename == "unsigned long")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(ulv, aGenVal, CGRS::ULongValue);
+    return PyLong_FromUnsignedLong(ulv->asULong());
+  }
+  else if (aTypename == "unsigned long long")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(ullv, aGenVal, CGRS::ULongLongValue);
+    return PyLong_FromUnsignedLongLong(ullv->asULongLong());
+  }
+
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericV(PyObject* aPyVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "void")
+  {
+    Py_RETURN_NONE;
+  }
+  return NULL;
+}
+
+static iface::CGRS::GenericValue*
+pythonValueToGenericW(iface::CGRS::GenericValue* aGenVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
+{
+  if (aTypename == "wstring")
+  {
+    DECLARE_QUERY_INTERFACE_OBJREF(wsv, aGenVal, CGRS::WStringValue);
+    std::stringstream ss;
+    std::wstring ws(wsv->asWString());
+    ss << ws.c_str();
+    return PyString_FromString(ss.str().c_str());
+  }
+  return NULL;
+}
+
+static iface::CGRS::GenericValue* (*fastP2GTypeTable[])(PyObject* aPyVal, const std::string& aTypeName, iface::CGRS::GenericType* aGenType) = {
+  /* a */ NULL,
+  /* b */ pythonValueToGenericB,
+  /* c */ pythonValueToGenericC,
+  /* d */ pythonValueToGenericD,
+  /* f */ pythonValueToGenericF,
+  /* g */ NULL,
+  /* h */ NULL,
+  /* i */ NULL,
+  /* j */ NULL,
+  /* k*/ NULL,
+  /* l */ pythonValueToGenericL,
+  /* m */ NULL,
+  /* n */ NULL,
+  /* o */ pythonValueToGenericO,
+  /* p */ NULL,
+  /* q */ NULL,
+  /* r */ NULL,
+  /* s */ pythonValueToGenericS,
+  /* t */ NULL,
+  /* u */ pythonValueToGenericU,
+  /* v */ pythonValueToGenericV,
+  /* w */ pythonValueToGenericW,
+  /* x */ NULL,
+  /* y */ NULL,
+  /* z */ NULL
+};
+
+static iface::CGRS::GenericValue*
 pythonToGenericValue(PyObject* aObj, iface::CGRS::GenericType* aType)
 {
   ObjRef<iface::CGRS::GenericsService> cgs(CreateGenericsService());
@@ -673,8 +868,41 @@ pythonToGenericValue(PyObject* aObj, iface::CGRS::GenericType* aType)
     // aObj is a Python object - wrap it in a callback.
     return new PythonCallback(aObj);
   }
+  
+  // It could be an enum...
+  DECLARE_QUERY_INTERFACE_OBJREF(et, aType, CGRS::EnumType);
+  if (et != NULL)
+  {
+    PyObject* iv = PyObject_GetAttrString(aObj, "asInteger");
+    if (iv != NULL)
+    {
+      PyErr_Clear();
+      long idx = PyInt_AsLong(iv);
+      Py_DECREF(iv);
+      if (!PyErr_Occurred())
+        return cgs->makeEnumFromIndex(idx);
+    }
+    PyErr_Clear();
+
+    iv = PyObject_GetAttrString(aObj, "asString");
+    if (!iv)
+      return NULL;
+    char* str = PyString_AsString(iv);
+    iface::CGRS::GenericValue* gv = NULL;
+    if (str != NULL)
+      gv = cgs->makeEnumFromString(str);
+    Py_DECREF(iv);
+    return gv;
+  }
 
   // Our type should be a built-in type...
+  char c = n[0];
+  if (c < 'a' || c > 'z')
+    return NULL; // Shouldn't happen.
+  c -= 'a';
+  if (fastP2GTypeTable[(int)c] == NULL)
+    return NULL;
+  return fastP2GTypeTable[(int)c](aObj, n, aType);
 }
 
 static PyObject *
