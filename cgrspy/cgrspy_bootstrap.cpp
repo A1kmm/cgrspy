@@ -42,6 +42,23 @@ static PyObject* methodNew(PyTypeObject *type, PyObject* args, PyObject* kwds);
 static void methodDealloc(Method* self);
 static PyObject* methodCall(Method* self, PyObject* args, PyObject* kwds);
 
+class ScopedGIL
+{
+public:
+  ScopedGIL()
+  {
+    mState = PyGILState_Ensure();
+  }
+
+  ~ScopedGIL()
+  {
+    PyGILState_Release(mState);
+  }
+
+private:
+  PyGILState_STATE mState;
+};
+
 class PythonObjectType
   : public iface::CGRS::GenericType
 {
@@ -115,6 +132,7 @@ public:
   std::string objid() throw()
   {
     std::string ret;
+    ScopedGIL gil;
     long val = PyObject_Hash(mPyObject);
     ret += (val % 254) + 1;
     val /= 254;
@@ -148,10 +166,14 @@ public:
   void*
   query_interface(const std::string& aIface) throw()
   {
+    add_ref();
     if (aIface == "XPCOM::IObject")
       return reinterpret_cast<void*>(static_cast<iface::XPCOM::IObject*>(this));
+    else if (aIface == "CGRS::GenericValue")
+      return reinterpret_cast<void*>(static_cast<iface::CGRS::GenericValue*>(this));
     else if (aIface == "CGRS::CallbackObjectValue")
       return reinterpret_cast<void*>(static_cast<iface::CGRS::CallbackObjectValue*>(this));
+    release_ref();
     return NULL;
   }
 
@@ -208,6 +230,8 @@ public:
 
     if (gm == NULL)
       return cgs->makeVoid();
+
+    ScopedGIL gil;
 
     PyObject* meth = PyObject_GetAttrString(mPyObject, aMethodName.c_str());
     if (meth == NULL)
@@ -1207,6 +1231,7 @@ methodCall(Method* self, PyObject* args, PyObject* kwds)
     if ((*i)->isIn())
     {
       PyObject* item = PySequence_GetItem(args, itemIndex);
+      itemIndex++;
       ObjRef<iface::CGRS::GenericType> pt = (*i)->type();
       iface::CGRS::GenericValue* gitem = pythonToGenericValue(item, pt);
       Py_DECREF(item);
@@ -1295,6 +1320,7 @@ bootstrap_getBootstrap(PyObject *self, PyObject *args)
 static PyObject*
 bootstrap_loadModule(PyObject* self, PyObject* args)
 {
+  PyEval_InitThreads();
   const char* bspath;
   if (!PyArg_ParseTuple(args, "s", &bspath))
     return NULL;
