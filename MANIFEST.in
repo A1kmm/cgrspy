@@ -1,0 +1,5 @@
+include README
+include setup.py
+include cgrspy/__init__.py
+include cgrspy/cgrspy_bootstrap.cpp
+include tests/*.py
