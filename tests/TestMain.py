@@ -12,13 +12,13 @@ class CISMock:
         print "In query_interface(%s)" % iface
         return None
 
-    def failure(why):
+    def failed(self, why):
         print "Integration failed: " + why
-        lock.release()
+        self.lock.release()
 
-    def success():
+    def done(self):
         print "Integration successful"
-        lock.release()
+        self.lock.release()
 
 class TestCGRSPy(unittest.TestCase):
     def setUp(self):

@@ -276,7 +276,8 @@ public:
 
     if (PyErr_Occurred())
     {
-      Py_DECREF(ret);
+      if (ret != NULL)
+        Py_DECREF(ret);
       *aWasException = true;
       return cgs->makeVoid();
     }
