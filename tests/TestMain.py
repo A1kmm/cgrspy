@@ -5,19 +5,43 @@ import unittest
 import threading
 
 class CISMock:
-    def __init__(self, lock):
+    def __init__(self, codeInfo, lock):
         self.lock = lock
+        self.success = False
+        self.codeInfo = codeInfo
+        cti = self.codeInfo.iterateTargets()
+        self.ctMap = {}
+        while True:
+            ct = cti.nextComputationTarget()
+            if ct == None:
+                break
+            if ct.type.asString == "VARIABLE_OF_INTEGRATION":
+                offs = 0
+            elif ct.type.asString == "CONSTANT":
+                continue
+            elif ct.type.asString == "STATE_VARIABLE":
+                offs = 1
+            elif ct.type.asString == "ALGEBRAIC":
+                offs = 1 + self.codeInfo.rateIndexCount * 2
+            elif ct.type.asString == "FLOATING":
+                continue
+            elif ct.type.asString == "LOCALLY_BOUND":
+                continue
+            else:
+                raise ("Unexpected computation target type " + ct.type.asString)
+            if ct.degree == 0:
+                self.ctMap[ct.variable.name + '\'' * ct.degree] = ct.assignedIndex + offs
+            self.ctSize = 2 * self.codeInfo.rateIndexCount + 1 + self.codeInfo.algebraicIndexCount
 
-    def query_interface(self, iface):
-        print "In query_interface(%s)" % iface
-        return None
+    def results(self, state):
+        for i in range(0, len(state), self.ctSize):
+            if abs(state[self.ctMap['time'] + i] - 10.0) < 1E-3:
+                self.success = abs(state[self.ctMap['x'] + i] - 22026.497973264843) < 1E-3
 
     def failed(self, why):
-        print "Integration failed: " + why
         self.lock.release()
 
     def done(self):
-        print "Integration successful"
         self.lock.release()
 
 class TestCGRSPy(unittest.TestCase):
@@ -52,9 +76,11 @@ class TestCGRSPy(unittest.TestCase):
         self.assertEqual(i, len(namelist))
 
     def test_callback(self):
+        cgrspy.bootstrap.loadGenericModule('cgrs_xpcom')
         cgrspy.bootstrap.loadGenericModule('cgrs_cis')
+        cgrspy.bootstrap.loadGenericModule('cgrs_ccgs')
         cgrspy.bootstrap.loadGenericModule('cgrs_telicems')
-        
+
         mod = self.cellmlBootstrap.createModel("1.1")
 
         c = mod.createComponent()
@@ -65,12 +91,12 @@ class TestCGRSPy(unittest.TestCase):
         vx.name = "x"
         vx.unitsName = "dimensionless"
         vx.initialValue = "1.0"
-        c.addElement(vx);
+        c.addElement(vx)
 
         vtime = mod.createCellMLVariable()
         vtime.name = "time"
         vtime.unitsName = "dimensionless"
-        c.addElement(vtime);
+        c.addElement(vtime)
 
         telicems = cgrspy.bootstrap.fetch('CreateTeLICeMService')
         od = mod.domElement.ownerDocument
@@ -79,19 +105,19 @@ class TestCGRSPy(unittest.TestCase):
         c.addMath(mr)
 
         cis = cgrspy.bootstrap.fetch('CreateIntegrationService')
-        solrun = cis.createODEIntegrationRun(cis.compileModelODE(mod))
+        compmod = cis.compileModelODE(mod)
+        solrun = cis.createODEIntegrationRun(compmod)
         stepType = lambda: ()
         stepType.asString = "ADAMS_MOULTON_1_12"
-        solrun.stepType = stepType;
+        solrun.stepType = stepType
         solrun.setResultRange(0, 10, 0.1)
         lock = threading.Lock()
         lock.acquire()
-        solrun.setProgressObserver(CISMock(lock))
+        mock = CISMock(compmod.codeInformation, lock)
+        solrun.setProgressObserver(mock)
         solrun.start()
-
         lock.acquire()
-
-        pass
+        self.assertEqual(True, mock.success)
 
 def runTests():
     suite = unittest.TestLoader().loadTestsFromTestCase(TestCGRSPy)
