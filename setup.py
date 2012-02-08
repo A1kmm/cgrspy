@@ -12,7 +12,7 @@ class test_cgrspy(distutils.command.build.build):
     user_options = []
 
 setup(name="cgrspy",
-      version="1.0",
+      version="1.1pre",
       description="Python interface to the CellML Generics and Reflection Service",
       author="Andrew Miller",
       author_email="ak.miller@auckland.ac.nz",
@@ -21,8 +21,8 @@ setup(name="cgrspy",
       cmdclass = {'test': test_cgrspy},
       ext_modules=[
         Extension("cgrspy.bootstrap", ["cgrspy/cgrspy_bootstrap.cpp"],
-          include_dirs=["../cellml-api/interfaces", "../cellml-api", "../cellml-api/sources", "../cellml-api/CGRS"],
-          library_dirs=["../cellml-api"],
+          include_dirs=["../interfaces", "..", "../sources", "../CGRS"],
+          library_dirs=[".."],
           libraries=["cellml", "cgrs"])
         ]
       )
