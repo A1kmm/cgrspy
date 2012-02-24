@@ -23,9 +23,11 @@ setup(name="cgrspy",
       version="1.1",
       description="Python interface to the CellML Generics and Reflection "
                   "Service",
+      long_description=open("README.rst").read(),
       author="Andrew Miller",
       author_email="ak.miller@auckland.ac.nz",
       url="http://cellml-api.sf.net/",
+      license='GPL/LGPL/MPL',
       packages=['cgrspy'],
       cmdclass={
           'test': test_cgrspy
