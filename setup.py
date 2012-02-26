@@ -1,8 +1,15 @@
-from distutils.core import setup, Extension
+from setuptools import setup
+from distutils.core import Extension
 from distutils.cmd import Command
 import distutils.command.build
 import sys
 import os
+from os.path import join
+
+ppath = lambda *p: p and join("..", *p) or ".."
+include_dirs = [ppath(i) for i in ["interfaces", "", "sources", "CGRS"]]
+library_dirs = [".."]
+
 
 class test_cgrspy(distutils.command.build.build):
     def run(self):
@@ -11,18 +18,26 @@ class test_cgrspy(distutils.command.build.build):
         TestMain.runTests()
     user_options = []
 
+
 setup(name="cgrspy",
-      version="1.1pre",
-      description="Python interface to the CellML Generics and Reflection Service",
+      version="1.1",
+      description="Python interface to the CellML Generics and Reflection "
+                  "Service",
+      long_description=open("README.rst").read(),
       author="Andrew Miller",
       author_email="ak.miller@auckland.ac.nz",
       url="http://cellml-api.sf.net/",
+      license='GPL/LGPL/MPL',
       packages=['cgrspy'],
-      cmdclass = {'test': test_cgrspy},
+      cmdclass={
+          'test': test_cgrspy
+      },
       ext_modules=[
-        Extension("cgrspy.bootstrap", ["cgrspy/cgrspy_bootstrap.cpp"],
-          include_dirs=["../interfaces", "..", "../sources", "../CGRS"],
-          library_dirs=[".."],
-          libraries=["cellml", "cgrs"])
-        ]
+          Extension(
+              name="cgrspy.bootstrap", 
+              sources=[join("cgrspy", "cgrspy_bootstrap.cpp")],
+              include_dirs=include_dirs,
+              library_dirs=library_dirs,
+              libraries=["cellml", "cgrs"])
+          ]
       )
