@@ -3,4 +3,5 @@
 build
 MANIFEST
 dist
-*.pyc
+*.egg-info
+*.py[co]
