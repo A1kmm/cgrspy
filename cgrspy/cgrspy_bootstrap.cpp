@@ -602,6 +602,16 @@ genericValueToPythonV(iface::CGRS::GenericValue* aGenVal, const std::string& aTy
   return NULL;
 }
 
+static void
+operator<<(std::ostream& data, const std::wstring& str)
+{
+  size_t n = wcstombs(NULL, str.c_str(), 0);
+  char* buf = new char[n + 1];
+  wcstombs(buf, str.c_str(), n + 1);
+  data << buf;
+  delete [] buf;
+}
+
 static PyObject*
 genericValueToPythonW(iface::CGRS::GenericValue* aGenVal, const std::string& aTypename, iface::CGRS::GenericType* aGenType)
 {
