@@ -1,7 +1,7 @@
 from ez_setup import use_setuptools
 use_setuptools()
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from distutils.core import Extension
 from distutils.cmd import Command
 import distutils.command.build
@@ -31,7 +31,7 @@ setup(name="cgrspy",
       author_email="ak.miller@auckland.ac.nz",
       url="http://cellml-api.sf.net/",
       license='GPL/LGPL/MPL',
-      packages=['cgrspy'],
+      packages=find_packages(exclude=['ez_setup']),
       cmdclass={
           'test': test_cgrspy
       },

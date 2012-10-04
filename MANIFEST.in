@@ -1,5 +1,8 @@
+recursive-include cgrspy *
 include README.rst
 include setup.py
-include cgrspy/__init__.py
-include cgrspy/cgrspy_bootstrap.cpp
-include tests/*.py
+include ez_setup.py
+global-exclude *~
+global-exclude *pyc
+global-exclude *pyo
+global-exclude .*swp
