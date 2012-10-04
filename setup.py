@@ -17,8 +17,8 @@ library_dirs = [".."]
 class test_cgrspy(distutils.command.build.build):
     def run(self):
         sys.path.insert(0, self.build_lib)
-        from tests import TestMain
-        TestMain.runTests()
+        from cgrspy.tests import test_main
+        test_main.runTests()
     user_options = []
 
 

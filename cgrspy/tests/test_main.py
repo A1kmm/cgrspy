@@ -122,3 +122,8 @@ class TestCGRSPy(unittest.TestCase):
 def runTests():
     suite = unittest.TestLoader().loadTestsFromTestCase(TestCGRSPy)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestCGRSPy))
+    return suite
