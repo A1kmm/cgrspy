@@ -1,7 +1,12 @@
-from ez_setup import use_setuptools
-use_setuptools()
+try:
+    # Only do this with the development
+    from ez_setup import use_setuptools
+    use_setuptools()
+except ImportError:
+    # ez_setup unneeded when packaged as an egg.
+    pass
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from distutils.core import Extension
 from distutils.cmd import Command
 import distutils.command.build
@@ -17,8 +22,8 @@ library_dirs = [".."]
 class test_cgrspy(distutils.command.build.build):
     def run(self):
         sys.path.insert(0, self.build_lib)
-        from tests import TestMain
-        TestMain.runTests()
+        from cgrspy.tests import test_main
+        test_main.runTests()
     user_options = []
 
 
@@ -31,7 +36,7 @@ setup(name="cgrspy",
       author_email="ak.miller@auckland.ac.nz",
       url="http://cellml-api.sf.net/",
       license='GPL/LGPL/MPL',
-      packages=['cgrspy'],
+      packages=find_packages(exclude=['ez_setup']),
       cmdclass={
           'test': test_cgrspy
       },
