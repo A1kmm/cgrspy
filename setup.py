@@ -1,5 +1,10 @@
-from ez_setup import use_setuptools
-use_setuptools()
+try:
+    # Only do this with the development
+    from ez_setup import use_setuptools
+    use_setuptools()
+except ImportError:
+    # ez_setup unneeded when packaged as an egg.
+    pass
 
 from setuptools import setup, find_packages
 from distutils.core import Extension

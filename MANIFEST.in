@@ -1,7 +1,6 @@
 recursive-include cgrspy *
 include README.rst
 include setup.py
-include ez_setup.py
 global-exclude *~
 global-exclude *pyc
 global-exclude *pyo
