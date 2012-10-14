@@ -28,7 +28,7 @@ class test_cgrspy(distutils.command.build.build):
 
 
 setup(name="cgrspy",
-      version="1.1",
+      version="1.1.1",
       description="Python interface to the CellML Generics and Reflection "
                   "Service",
       long_description=open("README.rst").read(),
